@@ -10,7 +10,7 @@ CORS(app)
 browser_state = {"status": "IDLE", "last_command": None}
 
 def run_ghost_task(command):  
-try:  
+    try:  
     if "screenshot" in command:  
         # Instead of a browser, we fetch the HTML directly  
         print("[SINC-SYNC] Fetching page content via Request-Lite...")  
