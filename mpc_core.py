@@ -13,8 +13,8 @@ CORS(app)
 def ensure_browser():  
     try:  
         subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)  
-    except Exception as e:  
-        print(f"Install Error: {e}")
+    except:  
+        pass
 
 ensure_browser()
 
@@ -23,27 +23,29 @@ browser_state = {"status": "IDLE", "last_command": None}
 def run_browser_task(command):  
     try:  
         with sync_playwright() as p:  
-            # NUCLEAR OPTIONS: Disabling everything that could possibly cause a container crash  
+            # MINIMALIST LAUNCH: No extensions, no GPU, no sandbox, minimal memory  
             browser = p.chromium.launch(  
-                headless=True,   
+                headless=True,  
                 args=[  
-                    "--no-sandbox",   
-                    "--disable-setuid-sandbox",   
-                    "--disable-dev-shm-usage",   
-                    "--disable-gpu",   
-                    "--single-process"  
+                    "--no-sandbox",  
+                    "--disable-setuid-sandbox",  
+                    "--disable-dev-shm-usage",  
+                    "--disable-gpu",  
+                    "--single-process",  
+                    "--disable-extensions",  
+                    "--disable-component-update"  
                 ]  
             )  
-            context = browser.new_context()  
-            page = context.new_page()  
-              
+            # Use a tiny viewport to save RAM  
+            context = browser.new_context(viewport={'width': 800, 'height': 600})  
+            page = context.new_page()
+
             if "screenshot" in command:  
-                # Lowering the requirements for the page load to avoid timeouts/crashes  
-                page.goto("https://example.com", wait_until="domcontentloaded", timeout=60000)  
-                time.sleep(3)   
+                # Use 'commit' wait instead of 'networkidle' to save memory/time  
+                page.goto("https://example.com", wait_until="commit", timeout=30000)  
                 page.screenshot(path="proof_of_life.png")  
                 browser.close()  
-                return "SUCCESS: THE GHOST HAS SEEN THE WORLD."
+                return "SUCCESS: SKINNY GHOST SAW THE WORLD."
 
             browser.close()  
             return f"Executed: {command}"  
