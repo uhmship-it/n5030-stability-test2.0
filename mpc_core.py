@@ -11,20 +11,15 @@ browser_state = {"status": "IDLE", "last_command": None}
 
 def run_ghost_task(command):  
     try:  
-    if "screenshot" in command:  
-        # Instead of a browser, we fetch the HTML directly  
-        print("[SINC-SYNC] Fetching page content via Request-Lite...")  
-        response = requests.get("https://example.com", timeout=10)  
-          
-        # We save the HTML to a file to prove we can write to the disk  
-        with open("proof_of_life.txt", "w", encoding="utf-8") as f:  
-            f.write(response.text)  
-              
-        return "SUCCESS: Ghost-Lite has captured the page content in proof_of_life.txt"  
-      
-    return f"Executed: {command}"  
-except Exception as e:  
-    return f"CRITICAL ERROR: {str(e)}"
+        if "screenshot" in command:  
+            print("[SINC-SYNC] Fetching page content...")  
+            response = requests.get("https://example.com", timeout=10)  
+            with open("proof_of_life.txt", "w", encoding="utf-8") as f:  
+                f.write(response.text)  
+            return "SUCCESS: Ghost-Lite captured the page content!"  
+        return f"Executed: {command}"  
+    except Exception as e:  
+        return f"CRITICAL ERROR: {str(e)}"
 
 @app.route('/status', methods=['GET'])  
 def get_status():  
@@ -42,17 +37,14 @@ def handle_command():
 
 def run_mpc():  
     port = int(os.environ.get("PORT", 8080))  
-    print(f"[SINC-SYNC] BINDING TO PORT: {port}...")  
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
-def start_mpc_bridge():  
-    mpc_thread = threading.Thread(target=run_mpc, daemon=True)  
-    mpc_thread.start()  
-    print("[SINC-SYNC] MPC Bridge (Lite) injected and listening...")
-
 if __name__ == "__main__":  
-    start_mpc_bridge()  
-    # To keep the main thread alive in some environments  
+    # Run in a thread to prevent blocking  
+    t = threading.Thread(target=run_mpc, daemon=True)  
+    t.start()  
+    print("[SINC-SYNC] MPC Bridge (Lite) is NOW LIVE.")  
+    # Keep main thread alive  
     import time  
     while True:  
         time.sleep(1)  
