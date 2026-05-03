@@ -38,3 +38,13 @@ def start():
 
 if __name__ == "__main__":
     start()
+    # ... all your existing code ...
+
+# --- THE SOVEREIGN LOCK ---  
+# This prevents the container from exiting and killing the MPC bridge  
+print("[SINC-SYNC] Ghost is locked and loaded. Entering Eternal Loop...")  
+try:  
+    while True:  
+        time.sleep(60) # Keep the main thread alive every minute  
+except KeyboardInterrupt:  
+    print("[SINC-SYNC] Manual shutdown triggered.")  
