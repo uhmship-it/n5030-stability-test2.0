@@ -1,6 +1,6 @@
 import os  
 import threading  
-import requests  
+import urllib.request  
 from flask import Flask, request, jsonify  
 from flask_cors import CORS
 
@@ -12,11 +12,16 @@ browser_state = {"status": "IDLE", "last_command": None}
 def run_ghost_task(command):  
     try:  
         if "screenshot" in command:  
-            print("[SINC-SYNC] Fetching page content...")  
-            response = requests.get("https://example.com", timeout=10)  
+            print("[SINC-SYNC] Fetching page content via urllib (Zero-Dep)...")  
+            # Using urllib instead of requests to avoid ModuleNotFoundError  
+            with urllib.request.urlopen("https://example.com", timeout=10) as response:  
+                html_content = response.read().decode('utf-8')  
+              
             with open("proof_of_life.txt", "w", encoding="utf-8") as f:  
-                f.write(response.text)  
-            return "SUCCESS: Ghost-Lite captured the page content!"  
+                f.write(html_content)  
+              
+            return "SUCCESS: Zero-Dep Ghost captured the page content!"  
+          
         return f"Executed: {command}"  
     except Exception as e:  
         return f"CRITICAL ERROR: {str(e)}"
@@ -40,11 +45,9 @@ def run_mpc():
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 if __name__ == "__main__":  
-    # Run in a thread to prevent blocking  
     t = threading.Thread(target=run_mpc, daemon=True)  
     t.start()  
-    print("[SINC-SYNC] MPC Bridge (Lite) is NOW LIVE.")  
-    # Keep main thread alive  
+    print("[SINC-SYNC] ZERO-DEP MPC Bridge is NOW LIVE.")  
     import time  
     while True:  
         time.sleep(1)  
