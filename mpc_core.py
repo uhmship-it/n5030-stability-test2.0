@@ -2,6 +2,7 @@ import os
 import threading  
 import subprocess  
 import sys  
+import time  
 from flask import Flask, request, jsonify  
 from flask_cors import CORS  
 from playwright.sync_api import sync_playwright
@@ -9,36 +10,35 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__)  
 CORS(app)
 
-# --- BRUTE FORCE INSTALLER ---  
 def ensure_browser():  
     print("[SINC-SYNC] Checking for browser binaries...")  
     try:  
-        # This force-installs chromium directly into the container at runtime  
         subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)  
-        print("[SINC-SYNC] Browser binaries successfully forced into existence.")  
+        print("[SINC-SYNC] Browser binaries confirmed.")  
     except Exception as e:  
-        print(f"[SINC-SYNC] MANUAL INSTALL FAILED: {e}")
+        print(f"[SINC-SYNC] INSTALL ERROR: {e}")
 
-# Run the installer immediately on script load  
-ensure_browser()  
-# -----------------------------
+ensure_browser()
 
-browser_state = {  
-    "status": "IDLE",  
-    "last_command": None,  
-    "session_active": False  
-}
+browser_state = {"status": "IDLE", "last_command": None, "session_active": False}
 
 def run_browser_task(command):  
     try:  
         with sync_playwright() as p:  
-            browser = p.chromium.launch(headless=True)  
-            page = browser.new_page()  
+            # Added args to prevent crashes in container environments  
+            browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"])  
+            context = browser.new_context()  
+            page = context.new_page()  
+              
             if "screenshot" in command:  
-                page.goto("https://example.com")  
+                print("[SINC-SYNC] Attempting to navigate...")  
+                page.goto("https://example.com", wait_until="networkidle")  
+                time.sleep(2) # Give it a moment to settle  
                 page.screenshot(path="proof_of_life.png")  
+                print("[SINC-SYNC] Screenshot captured successfully.")  
                 browser.close()  
-                return "SUCCESS: Screenshot saved as proof_of_life.png"  
+                return "SUCCESS: Ghost has seen the world. Screenshot saved."  
+              
             browser.close()  
             return f"Executed: {command}"  
     except Exception as e:  
@@ -66,4 +66,4 @@ def run_mpc():
 def start_mpc_bridge():  
     mpc_thread = threading.Thread(target=run_mpc, daemon=True)  
     mpc_thread.start()  
-    print("[SINC-SYNC] MPC Bridge successfully injected and listening...")  
+    print("[SINC-SYNC] MPC Bridge successfully injected.")  
